@@ -1,0 +1,48 @@
+services:
+  robotwin:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        CUDA_VERSION: ${CUDA_VERSION:-12.1}
+        TORCH_CUDA: ${TORCH_CUDA:-cu121}
+    image: robotwin:dev
+    container_name: robotwin-x11
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+
+    environment:
+      - INSTALL_CLAUDE_CODE=${INSTALL_CLAUDE_CODE:-0}
+      - PYTHONUNBUFFERED=1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+
+    network_mode: host
+    ipc: host
+    pid: host
+
+    volumes:
+      - ..:/workspace/RoboTwin
+      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/.Xauthority:/root/.Xauthority:rw
+
+    working_dir: /workspace/RoboTwin
+    command: tail -f /dev/null
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility, graphics, video]
+
+    ulimits:
+      nofile: { soft: 65536, hard: 65536 }
+      nproc: 65536
+      memlock: -1
+      stack: 67108864
