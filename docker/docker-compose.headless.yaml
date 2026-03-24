@@ -5,8 +5,7 @@ services:
       dockerfile: docker/Dockerfile
       args:
         CUDA_VERSION: ${CUDA_VERSION:-12.1}
-        TORCH_CUDA: ${TORCH_CUDA:-cu121}
-    image: robotwin:dev
+    image: robotwin:latest
     container_name: robotwin-headless
     restart: unless-stopped
     tty: true
@@ -14,6 +13,7 @@ services:
 
     environment:
       - INSTALL_CLAUDE_CODE=${INSTALL_CLAUDE_CODE:-0}
+      - ROBO_AUTO_ASSETS=${ROBO_AUTO_ASSETS:-1}
       - PYTHONUNBUFFERED=1
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all

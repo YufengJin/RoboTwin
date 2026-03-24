@@ -1,0 +1,52 @@
+[project]
+name = "robotwin"
+version = "2.0.0"
+description = "RoboTwin simulation and benchmarks (dependency lock only; code run from repo root)."
+readme = "README.md"
+requires-python = ">=3.10,<3.11"
+dependencies = [
+    "setuptools>=65,<82",
+    "torch==2.4.1",
+    "torchvision",
+    "transforms3d==0.4.2",
+    "sapien==3.0.0b1",
+    "scipy==1.10.1",
+    "mplib==0.2.1",
+    "gymnasium==0.29.1",
+    "trimesh==4.4.3",
+    "open3d==0.18.0",
+    "imageio==2.34.2",
+    "pydantic",
+    "zarr",
+    "openai",
+    "huggingface-hub==0.25.0",
+    "h5py",
+    "azure==4.0.0",
+    "azure-ai-inference",
+    "pyglet<2",
+    "wandb",
+    "moviepy",
+    "termcolor",
+    "av",
+    "matplotlib",
+    "ffmpeg",
+    "toppra>=0.4.0",
+    "policy-websocket @ git+https://github.com/YufengJin/policy_websocket.git",
+    "nvidia-curobo @ git+https://github.com/NVlabs/curobo.git@v0.7.7",
+]
+
+[tool.uv]
+package = false
+no-build-isolation-package = ["nvidia-curobo"]
+
+[tool.uv.extra-build-dependencies]
+nvidia-curobo = ["torch==2.4.1"]
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu121" }
+torchvision = { index = "pytorch-cu121" }

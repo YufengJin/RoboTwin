@@ -1,6 +1,6 @@
 # RoboTwin Docker 开发环境
 
-基于仓库根目录 [README.md](../README.md) 与 `script/requirements.txt` 的主线依赖（PyTorch 2.4.1、SAPIEN 等），提供 GPU 开发与无头/带显示器两种 Compose 配置。
+基于仓库根目录 [README.md](../README.md) 与根目录 [`pyproject.toml`](../pyproject.toml) / [`uv.lock`](../uv.lock) 的主线依赖（PyTorch 2.4.1 cu121、SAPIEN、`nvidia-curobo` 等），提供 GPU 开发与无头/带显示器两种 Compose 配置。
 
 ## 前置条件
 
@@ -20,16 +20,13 @@ docker compose -f docker/docker-compose.headless.yaml build
 
 | 参数 | 默认 | 说明 |
 |------|------|------|
-| `CUDA_VERSION` | `12.1` | 基础镜像 `nvidia/cuda` 主版本（与 `Dockerfile` 中 tag 一致） |
-| `TORCH_CUDA` | `cu121` | PyTorch wheel 后缀；若驱动较旧可改为 `cu118` 并同时将 `CUDA_VERSION` 设为 `11.8`（需自行调整 `Dockerfile` 中 `FROM` 的 tag 与 cu 版本一致） |
+| `CUDA_VERSION` | `12.1` | 基础镜像 `nvidia/cuda` 主版本（需与 `uv.lock` 中 PyTorch CUDA 12.1 一致，否则 `nvidia-curobo` 编译可能报 CUDA 版本不匹配） |
 
-示例：
+若需改用 CUDA 11.8 / `cu118` 的 PyTorch，请同步修改 [`pyproject.toml`](../pyproject.toml) 中 `[[tool.uv.index]]` 与 `[tool.uv.sources]`，在仓库根目录重新执行 `uv lock` 后再构建镜像。
 
-```bash
-CUDA_VERSION=11.8 TORCH_CUDA=cu118 docker compose -f docker/docker-compose.headless.yaml build
-```
+首次构建会编译 **CuRobo**，可能耗时 **20 分钟以上**。构建阶段无 GPU，已通过 `TORCH_CUDA_ARCH_LIST` 预置常见架构以完成 CUDA 扩展编译。
 
-（使用 `cu118` 时请将 `Dockerfile` 第一行 `FROM` 改为 `nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04` 或你环境可用的 11.8 tag。）
+运行容器时需保留 Compose 中的 GPU 设备声明：`import envs.robot.planner` 会触发 **cuRobo 在导入期初始化 CUDA**；若用 `docker run` 测试，需加 `--gpus all`。
 
 ## 数据与缓存挂载
 
@@ -79,9 +76,22 @@ docker exec -it robotwin-x11 bash
 
 ## 启动时 entrypoint 行为
 
-- 将 `PATH` / `VIRTUAL_ENV` 指向镜像内 `/opt/venv`（已通过 `uv` 安装 `script/requirements.txt` 中的依赖）。
-- 若仓库根目录将来增加 `pyproject.toml` 或 `setup.py`，会自动执行 `uv pip install -e .`。
+- 将 `PATH` / `VIRTUAL_ENV` 指向镜像内 `/opt/venv`（构建阶段已通过 `uv sync --frozen` 安装 `uv.lock` 中的依赖，含 `nvidia-curobo`）。
+- 根目录 `pyproject.toml` 使用 `[tool.uv] package = false`，仅作依赖锁定，**不会**在启动时执行 `uv pip install -e .`。
+- 若存在 `setup.py`，仍会执行 `uv pip install -e . --no-deps`。
 - 若设置环境变量 `INSTALL_CLAUDE_CODE=1`，会尝试安装 Claude Code CLI（需网络）。
+
+### 重新生成 `uv.lock`
+
+`nvidia-curobo` 在解析/锁定时需要本机环境中已有 `torch` 等构建依赖。可在仓库根目录使用临时虚拟环境（示例）：
+
+```bash
+uv venv .lock-build-env --python 3.10
+UV_PROJECT_ENVIRONMENT="$PWD/.lock-build-env" uv pip install \
+  torch==2.4.1 torchvision setuptools wheel setuptools-scm cython numpy cmake ninja \
+  --extra-index-url https://download.pytorch.org/whl/cu121
+UV_PROJECT_ENVIRONMENT="$PWD/.lock-build-env" uv lock --python 3.10 --no-build-isolation
+```
 
 ## 可选：启用 Claude Code CLI
 

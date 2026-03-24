@@ -14,6 +14,10 @@ task_config/
 # eval result
 eval_result/
 
+# WebSocket demo / eval outputs (run_demo_ws.py, run_eval_ws.py)
+demo_log_ws/
+eval_logs_ws/
+
 # Code Generation
 assets/*
 !assets/_download.py
@@ -23,7 +27,11 @@ policy/weights/*
 
 envs/curobo/*
 
+.venv/
 .vscode
+.lock-build-env/
+.test-sync-venv/
+
 /config.json
 
 /*.json*

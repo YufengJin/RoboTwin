@@ -62,6 +62,18 @@ Accepted to <i style="color: red; display: inline;"><b>ECCV Workshop 2024 (Best 
 
 See [RoboTwin 2.0 Document (Usage - Install & Download)](https://robotwin-platform.github.io/doc/usage/robotwin-install.html) for installation instructions. It takes about 20 minutes for installation.
 
+**Python environment (recommended):** use [Docker](docker/README.md): dependencies live in the image at **`/opt/venv`** (built with `uv sync --frozen` from [`pyproject.toml`](pyproject.toml) / [`uv.lock`](uv.lock), including **nvidia-curobo**). You do **not** need a host **`./.venv`** for that workflow. After changing the lock file, rebuild the image (`docker compose ... build`). Optional native install / lock regeneration on the host: [uv](https://docs.astral.sh/uv/) + [`script/uv_sync_local.sh`](script/uv_sync_local.sh) when `nvcc` defaults to CUDA 11.x; optional patches + PyTorch3D: [`script/_install.sh`](script/_install.sh). Editor: attach to the container (e.g. Dev Containers / “Python in Docker”) so the interpreter is **`/opt/venv/bin/python`**.
+
+**Assets (embodiments, objects, background textures):** run from the repository root:
+
+```bash
+bash script/_download_assets.sh
+```
+
+This uses [assets/_download.py](assets/_download.py) (`huggingface_hub.snapshot_download`) to fetch `*.zip` into **`assets/`**, then unzips to `assets/embodiments/`, `assets/objects/`, `assets/background_texture/`, and runs `script/update_embodiment_config_path.py`.
+
+**Docker:** with [docker/docker-compose.x11.yaml](docker/docker-compose.x11.yaml) or [docker/docker-compose.headless.yaml](docker/docker-compose.headless.yaml), the repo is bind-mounted at `/workspace/RoboTwin`, so running the same command inside the container writes to your host clone’s `assets/` (no duplicate copy). `~/.cache/huggingface` is also mounted into the container so HF blobs are shared with the host. The image [entrypoint](docker/entrypoint.sh) runs `script/_download_assets.sh` automatically on container start when `assets/embodiments`, `assets/objects`, or `assets/background_texture` is missing or empty; otherwise it skips. Set environment variable `ROBO_AUTO_ASSETS=0` on the service to disable this behavior.
+
 # 🤷‍♂️ Tasks Informations
 See [RoboTwin 2.0 Tasks Doc](https://robotwin-platform.github.io/doc/tasks/index.html) for more details.
 
