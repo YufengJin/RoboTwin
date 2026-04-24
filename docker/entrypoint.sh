@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# Sentinel: external waiters (setup scripts, CI) poll /tmp/entrypoint_done to know when
+# this entrypoint has finished its bootstrap work and handed off to CMD.
+rm -f /tmp/entrypoint_done
+
 export PATH="/opt/venv/bin:/usr/local/bin:${PATH:-/usr/bin:/bin}"
 export VIRTUAL_ENV="/opt/venv"
 
@@ -41,4 +45,5 @@ elif [ "$ROBO_AUTO_ASSETS" != "1" ]; then
 fi
 
 echo ">> Ready. Repo: $RT_ROOT"
+touch /tmp/entrypoint_done
 exec "$@"

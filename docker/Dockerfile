@@ -36,6 +36,14 @@ COPY pyproject.toml uv.lock ./
 RUN git lfs install \
     && uv sync --frozen
 
+# Vulkan ICD for SAPIEN headless ray-tracing (used when host driver mount is absent or non-standard)
+COPY docker/nvidia_icd.json /usr/share/vulkan/icd.d/nvidia_icd.json
+COPY docker/nvidia_layers.json /usr/share/vulkan/implicit_layer.d/nvidia_layers.json
+ENV VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
+
+# Qt XDG runtime dir (SAPIEN/MPlib load Qt; without this dir Qt prints a warning to stderr on every import)
+RUN mkdir -p /tmp/runtime-root && chmod 700 /tmp/runtime-root
+
 WORKDIR /workspace/RoboTwin
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
