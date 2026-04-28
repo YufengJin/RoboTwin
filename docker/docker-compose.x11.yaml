@@ -5,7 +5,7 @@ services:
       dockerfile: docker/Dockerfile
       args:
         CUDA_VERSION: ${CUDA_VERSION:-12.1}
-    image: robotwin:latest
+    image: ${IMAGE:-yufengjin/robotwin:latest}
     container_name: robotwin-x11
     restart: unless-stopped
     tty: true
