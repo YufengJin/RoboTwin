@@ -1,105 +1,68 @@
-# RoboTwin Docker dev environment
-
-GPU dev image aligned with the root [README.md](../README.md), [`pyproject.toml`](../pyproject.toml), and [`uv.lock`](../uv.lock) (PyTorch 2.4.1 cu121, SAPIEN, `nvidia-curobo`, etc.). Two compose profiles are provided: **headless** for servers / training and **x11** for local GUI work.
+# Docker Setup for RoboTwin
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/engine/install/) + [Docker Compose](https://docs.docker.com/compose/install/)
-- [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) with a host NVIDIA driver matching the CUDA base (driver ≥ 525 for CUDA 12.1)
+Run the prerequisite checker — it verifies Docker, Compose plugin, and the NVIDIA driver + Container Toolkit:
+
+```bash
+bash docker/check_prereqs.sh
+```
+
+If any check fails, the script prints an install link and exits non-zero.
+
+Manual install references:
+
+- Docker Engine — https://docs.docker.com/engine/install/
+- NVIDIA Container Toolkit — https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html
+- NVIDIA GPU driver — https://www.nvidia.com/en-us/drivers/
+
+## Dependencies (uv)
+
+Runtime versions are pinned in `pyproject.toml` and `uv.lock`. Refresh the lockfile after editing dependencies:
+
+```bash
+uv lock
+```
+
+Docker installs the locked environment with `uv sync --frozen --no-install-project` (see `docker/Dockerfile`).
 
 ## Build
 
-Run from anywhere; just point `-f` at a compose file in this directory.
+From project root:
 
 ```bash
-cd /path/to/RoboTwin
 docker compose -f docker/docker-compose.headless.yaml build
 ```
 
-### Build args
+## Volume mounts
 
-| Arg | Default | Notes |
-|-----|---------|-------|
-| `CUDA_VERSION` | `12.1` | Major version of the `nvidia/cuda` base image. Must match the PyTorch cu121 wheels pinned in `uv.lock`; mismatch breaks `nvidia-curobo` compilation with a CUDA-version error. |
+Update paths in the compose file to match your system.
 
-If you want to switch to `cu118`, edit `[[tool.uv.index]]` and `[tool.uv.sources]` in [`pyproject.toml`](../pyproject.toml), regenerate the lock file (`uv lock`), and rebuild.
-
-First build compiles **CuRobo** and takes **≥ 20 minutes**. There is no GPU during build, so `TORCH_CUDA_ARCH_LIST` is pre-seeded with common architectures (`7.0;7.5;8.0;8.6;8.9;9.0+PTX`) for CUDA-extension compilation.
-
-At runtime, keep the GPU device declaration in the compose file: `import envs.robot.planner` triggers **cuRobo initialising CUDA at import time**. If you drive the image with `docker run` instead of compose, add `--gpus all`.
-
-## Mounts
-
-| Host | Container |
-|------|-----------|
-| Full RoboTwin repo (`..`) | `/workspace/RoboTwin` |
-| `~/.cache/huggingface` | `/root/.cache/huggingface` |
-
-Asset download is handled by `script/_download_assets.sh` (invoked automatically when `ROBO_AUTO_ASSETS=1`). Full dataset setup follows the [official install doc](https://robotwin-platform.github.io/doc/usage/robotwin-install.html).
-
-The compose files declare `graphics` and `video` GPU capabilities so the NVIDIA Container Toolkit mounts `libGLX_nvidia` and friends; without them, SAPIEN ray-tracing init fails with `failed to find a rendering device`.
-
-## Sanity check
-
-One-shot (no `up -d` needed):
-
-```bash
-docker compose -f docker/docker-compose.headless.yaml run --rm robotwin \
-  bash -lc 'python -c "import torch; print(torch.cuda.is_available())" && python script/test_render.py'
-```
-
-Expected output: `True` plus a green `Render Well`.
+| Container path | Purpose |
+|----------------|---------|
+| `../` → `/workspace/robotwin` | Project (editable install) |
+| `${HOME}/.cache/huggingface` | HF model cache |
 
 ## Usage
 
-### Headless (server / training)
+### Headless (training / serving)
 
 ```bash
 docker compose -f docker/docker-compose.headless.yaml up -d
 docker exec -it robotwin-headless bash
 ```
 
-Inside the container, the working dir is `/workspace/RoboTwin`. Example:
+### X11 (GUI)
 
 ```bash
-bash collect_data.sh beat_block_hammer demo_randomized 0
-```
-
-### X11 (local GUI)
-
-Allow X on the host (`xhost +local:`) and then:
-
-```bash
+xhost +local:
 docker compose -f docker/docker-compose.x11.yaml up -d
-docker exec -it robotwin-x11 bash
+docker exec -it robotwin-gui bash
 ```
 
-## Entrypoint behavior
+## Entrypoint
 
-- Sets `PATH` / `VIRTUAL_ENV` to `/opt/venv` (populated at build time by `uv sync --frozen`, including `nvidia-curobo`).
-- The root `pyproject.toml` uses `[tool.uv] package = false` (dependency lock only); no `uv pip install -e .` is run unless a `setup.py` is present.
-- On startup the entrypoint clears `/tmp/entrypoint_done`; once bootstrap completes (editable install + optional asset download) it `touch`es the file so external waiters (CI, smoke-test setup scripts) can poll it.
-- `INSTALL_CLAUDE_CODE=1` will attempt to install the Claude Code CLI (requires network).
-- `ROBO_AUTO_ASSETS=1` (default) runs `script/_download_assets.sh` if `assets/embodiments`, `assets/objects`, or `assets/background_texture` is empty.
+On each start:
 
-### Regenerating `uv.lock`
-
-`nvidia-curobo` needs `torch` etc. already installed in the build environment during lock resolution. Use a throwaway venv:
-
-```bash
-uv venv .lock-build-env --python 3.10
-UV_PROJECT_ENVIRONMENT="$PWD/.lock-build-env" uv pip install \
-  torch==2.4.1 torchvision setuptools wheel setuptools-scm cython numpy cmake ninja \
-  --extra-index-url https://download.pytorch.org/whl/cu121
-UV_PROJECT_ENVIRONMENT="$PWD/.lock-build-env" uv lock --python 3.10 --no-build-isolation
-```
-
-## Optional: Claude Code CLI
-
-```bash
-INSTALL_CLAUDE_CODE=1 docker compose -f docker/docker-compose.headless.yaml up -d
-```
-
-## Relation to the official docs
-
-This image only packages Python and system libraries. Task configuration, control modes, and benchmark semantics follow the [RoboTwin 2.0 docs](https://robotwin-platform.github.io/doc/usage/index.html).
+1. Uses uv-managed venv at `/opt/venv` (Python 3.10)
+2. When `pyproject.toml` is present: `uv pip install -e .` (deps already synced in the image)

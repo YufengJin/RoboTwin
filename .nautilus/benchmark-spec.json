@@ -1,0 +1,151 @@
+{
+  "benchmark_name": "robotwin",
+  "schema_version": 1,
+  "captured_at": "2026-05-02T07:37:17+00:00",
+  "captured_from": {
+    "repo_path": "/workspace/RoboTwin",
+    "env_id": "beat_block_hammer",
+    "make_expr": "RoboTwinSpecAdapter(task_name=\"beat_block_hammer\", task_config=\"demo_clean\")",
+    "category": "IL"
+  },
+  "obs_spec": {
+    "observation.left_camera.rgb": {
+      "dtype": "uint8",
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "kind": "image_wrist"
+    },
+    "observation.right_camera.rgb": {
+      "dtype": "uint8",
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "kind": "image_wrist"
+    },
+    "observation.head_camera.rgb": {
+      "dtype": "uint8",
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "kind": "image_primary"
+    },
+    "observation.front_camera.rgb": {
+      "dtype": "uint8",
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "kind": "image_primary"
+    },
+    "pointcloud": {
+      "dtype": "float64",
+      "shape": [
+        0
+      ],
+      "kind": "pointcloud"
+    },
+    "joint_action.vector": {
+      "dtype": "float64",
+      "shape": [
+        14
+      ],
+      "kind": "scalar"
+    }
+  },
+  "action_spec": {
+    "shape": [
+      14
+    ],
+    "dtype": "float32",
+    "low": [
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0
+    ],
+    "high": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "controller": "DualArmJointPosController(left=PiperArm6+Gripper1, right=PiperArm6+Gripper1)",
+    "gripper_convention": {
+      "open": 0.04,
+      "close": 0.0,
+      "binary": false,
+      "index_left": 6,
+      "index_right": 13,
+      "note": "qpos action_type; gripper joint position in meters (Piper parallel-jaw)."
+    },
+    "components": [
+      "left_arm_0",
+      "left_arm_1",
+      "left_arm_2",
+      "left_arm_3",
+      "left_arm_4",
+      "left_arm_5",
+      "left_gripper",
+      "right_arm_0",
+      "right_arm_1",
+      "right_arm_2",
+      "right_arm_3",
+      "right_arm_4",
+      "right_arm_5",
+      "right_gripper"
+    ]
+  },
+  "task_description_source": "task_config/.yml -> language_instruction (passed by robotwin_run_utils as instruction; see envs/<task>.py task description docstrings)",
+  "step_signature": "5-tuple",
+  "smoke_test_passed": true,
+  "dropped_task_specific_keys": [
+    "observation.left_camera.intrinsic_cv",
+    "observation.left_camera.extrinsic_cv",
+    "observation.left_camera.cam2world_gl",
+    "observation.right_camera.intrinsic_cv",
+    "observation.right_camera.extrinsic_cv",
+    "observation.right_camera.cam2world_gl",
+    "observation.head_camera.intrinsic_cv",
+    "observation.head_camera.extrinsic_cv",
+    "observation.head_camera.cam2world_gl",
+    "observation.front_camera.intrinsic_cv",
+    "observation.front_camera.extrinsic_cv",
+    "observation.front_camera.cam2world_gl",
+    "joint_action.left_arm",
+    "joint_action.left_gripper",
+    "joint_action.right_arm",
+    "joint_action.right_gripper",
+    "endpose.left_endpose",
+    "endpose.left_gripper",
+    "endpose.right_endpose",
+    "endpose.right_gripper"
+  ]
+}

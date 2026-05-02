@@ -1,0 +1,77 @@
+{
+  "primary_install_strategy": "uv-sync-frozen",
+  "system_apt_packages": [
+    "ninja-build",
+    "ffmpeg",
+    "libgl1",
+    "libglib2.0-0",
+    "libegl1-mesa",
+    "libgles2-mesa",
+    "libxrandr2",
+    "libxcursor1",
+    "libxdamage1",
+    "libxi6",
+    "libxtst6",
+    "libxext6",
+    "libvulkan1",
+    "vulkan-tools",
+    "libegl1",
+    "libosmesa6"
+  ],
+  "third_party_clones": [],
+  "installation_steps": [
+    {
+      "kind": "apt_install",
+      "pkgs": [
+        "ninja-build",
+        "ffmpeg",
+        "libgl1",
+        "libglib2.0-0",
+        "libegl1-mesa",
+        "libgles2-mesa",
+        "libxrandr2",
+        "libxcursor1",
+        "libxdamage1",
+        "libxi6",
+        "libxtst6",
+        "libxext6",
+        "libvulkan1",
+        "vulkan-tools",
+        "libegl1",
+        "libosmesa6"
+      ]
+    },
+    {
+      "kind": "shell",
+      "cmd": "git lfs install"
+    },
+    {
+      "kind": "uv_sync",
+      "args": ["--frozen"]
+    }
+  ],
+  "post_install_hooks": [],
+  "runtime_mounts": [],
+  "runtime_env_vars": [
+    {
+      "key": "ROBO_AUTO_ASSETS",
+      "value": "1",
+      "evidence": "README: 'Set environment variable ROBO_AUTO_ASSETS=0 on the service to disable this behavior.'"
+    }
+  ],
+  "evidence": {
+    "readme_quotes": [
+      "Python environment (recommended): use Docker: dependencies live in the image at /opt/venv (built with uv sync --frozen from pyproject.toml / uv.lock, including nvidia-curobo).",
+      "First build compiles CuRobo and takes >= 20 minutes. There is no GPU during build, so TORCH_CUDA_ARCH_LIST is pre-seeded with common architectures (7.0;7.5;8.0;8.6;8.9;9.0+PTX) for CUDA-extension compilation.",
+      "pyproject.toml: no-build-isolation-package = ['nvidia-curobo'] (nvidia-curobo needs torch already present during build; uv handles this via extra-build-dependencies)",
+      "compose files declare graphics and video GPU capabilities so the NVIDIA Container Toolkit mounts libGLX_nvidia and friends; without them, SAPIEN ray-tracing init fails with 'failed to find a rendering device'.",
+      "git lfs install is needed before uv sync because nvidia-curobo is fetched from git (CuRobo)."
+    ],
+    "ambiguities": [
+      "pyproject.toml pins setuptools>=65,<82, which is already within the needs_setuptools_pin safe range (>=62.3,<81 would be more conservative). We use the repo's own pin (setuptools>=65,<82) already expressed in pyproject dependencies — no extra step needed; uv sync --frozen will install the locked version.",
+      "nvidia-curobo requires CUDA devel toolkit at build time (CUDA C++ extension compilation). probe detected cuda_variant=runtime by default; overridden to devel via --cuda-variant devel. The Dockerfile must use the devel base image tag.",
+      "cuda_tag_source=hub-api: Docker Hub cuda:12.1.1 only has cudnn8 tags (not cudnn9). Using nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04 as base image — this is correct despite probe reporting cudnn9 in probe.json.",
+      "ROBO_AUTO_ASSETS=1 (default) will run script/_download_assets.sh on first container start when assets are missing. This requires network and huggingface_hub; estimated ~10-20GB of assets. Surfaced as runtime_env_var so users can set ROBO_AUTO_ASSETS=0 to disable."
+    ]
+  }
+}

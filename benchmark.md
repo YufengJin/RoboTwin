@@ -148,3 +148,197 @@ Embodiments are defined in `task_config/_embodiment_config.yml` and task YAMLs o
 - Per-task docs: [RoboTwin 2.0 docs](https://robotwin-platform.github.io/doc/usage/index.html).
 - Expert planner / dataset recording: `script/eval_policy.py`, `script/pkl2hdf5*.py` (upstream, not part of the smoke harness).
 - Container internals: [`docker/README.md`](docker/README.md).
+
+<!-- BEGIN OBS_ACTION_SPEC -->
+## Observation / Action spec (auto-captured)
+
+Captured by `benchmark-generator` at `2026-05-02T07:37:17+00:00` from env `beat_block_hammer` (build expression `RoboTwinSpecAdapter(task_name="beat_block_hammer", task_config="demo_clean")`). Cross-task verified against `lift_pot` (identical action+filtered-obs spec).
+
+Re-run the skill to refresh; this block is owned by the skill — manual edits will be overwritten. UNKNOWN fields from the auto-introspector were hand-annotated against the upstream dual-arm Piper qpos contract documented in `script/robotwin_run_utils.py::execute_policy_action_chunk` (action_type='qpos').
+
+### obs_spec (robot interface only — see `dropped_task_specific_keys` in JSON for camera intrinsics + per-arm joint splits)
+
+| key | dtype | shape | kind | notes |
+|-----|-------|-------|------|-------|
+| `observation.left_camera.rgb` | `uint8` | `[240, 320, 3]` | image_wrist |  |
+| `observation.right_camera.rgb` | `uint8` | `[240, 320, 3]` | image_wrist |  |
+| `observation.head_camera.rgb` | `uint8` | `[240, 320, 3]` | image_primary |  |
+| `observation.front_camera.rgb` | `uint8` | `[240, 320, 3]` | image_primary |  |
+| `pointcloud` | `float64` | `[0]` | pointcloud |  |
+| `joint_action.vector` | `float64` | `[14]` | scalar |  |
+
+Notes: head_camera + front_camera are scene-view (`image_primary`); left_camera + right_camera are wrist cameras (`image_wrist`) per `script/robotwin_policy_obs.py`. `pointcloud` shape is `[0]` because the default `demo_clean` task config disables pointcloud collection — enable via `data_type.pointcloud=true` in `task_config/demo_clean.yml`. `joint_action.vector` is the canonical 14-dim dual-arm proprio + action target (also returned in chunked form by the WebSocket policy server).
+
+### action_spec
+
+| field | value |
+|-------|-------|
+| shape | `[14]` |
+| dtype | `float32` |
+| low | `[-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]` |
+| high | `[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]` |
+| controller | `DualArmJointPosController(left=PiperArm6+Gripper1, right=PiperArm6+Gripper1)` |
+| components | `['left_arm_0', 'left_arm_1', 'left_arm_2', 'left_arm_3', 'left_arm_4', 'left_arm_5', 'left_gripper', 'right_arm_0', 'right_arm_1', 'right_arm_2', 'right_arm_3', 'right_arm_4', 'right_arm_5', 'right_gripper']` |
+| gripper_convention | `open=0.04, close=0.0, binary=False, index_left=6, index_right=13` |
+| gripper_convention.note | qpos action_type; gripper joint position in meters (Piper parallel-jaw). |
+
+- `task_description_source`: `task_config/.yml -> language_instruction (passed by robotwin_run_utils as instruction; see envs/<task>.py task description docstrings)`
+- `step_signature`: `5-tuple` (gym-shim adapter wrapping `take_action`+`get_obs`+`check_success`; the underlying RoboTwin task does NOT expose gym `step()` — see "About" above)
+
+Authoritative JSON: `<repo>/.nautilus/benchmark-spec.json` (gitignore unless reproducibility commit desired).
+
+```json
+{
+  "benchmark_name": "robotwin",
+  "schema_version": 1,
+  "captured_at": "2026-05-02T07:37:17+00:00",
+  "captured_from": {
+    "repo_path": "/workspace/RoboTwin",
+    "env_id": "beat_block_hammer",
+    "make_expr": "RoboTwinSpecAdapter(task_name=\"beat_block_hammer\", task_config=\"demo_clean\")",
+    "category": "IL"
+  },
+  "obs_spec": {
+    "observation.left_camera.rgb": {
+      "dtype": "uint8",
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "kind": "image_wrist"
+    },
+    "observation.right_camera.rgb": {
+      "dtype": "uint8",
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "kind": "image_wrist"
+    },
+    "observation.head_camera.rgb": {
+      "dtype": "uint8",
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "kind": "image_primary"
+    },
+    "observation.front_camera.rgb": {
+      "dtype": "uint8",
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "kind": "image_primary"
+    },
+    "pointcloud": {
+      "dtype": "float64",
+      "shape": [
+        0
+      ],
+      "kind": "pointcloud"
+    },
+    "joint_action.vector": {
+      "dtype": "float64",
+      "shape": [
+        14
+      ],
+      "kind": "scalar"
+    }
+  },
+  "action_spec": {
+    "shape": [
+      14
+    ],
+    "dtype": "float32",
+    "low": [
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0,
+      -1.0
+    ],
+    "high": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "controller": "DualArmJointPosController(left=PiperArm6+Gripper1, right=PiperArm6+Gripper1)",
+    "gripper_convention": {
+      "open": 0.04,
+      "close": 0.0,
+      "binary": false,
+      "index_left": 6,
+      "index_right": 13,
+      "note": "qpos action_type; gripper joint position in meters (Piper parallel-jaw)."
+    },
+    "components": [
+      "left_arm_0",
+      "left_arm_1",
+      "left_arm_2",
+      "left_arm_3",
+      "left_arm_4",
+      "left_arm_5",
+      "left_gripper",
+      "right_arm_0",
+      "right_arm_1",
+      "right_arm_2",
+      "right_arm_3",
+      "right_arm_4",
+      "right_arm_5",
+      "right_gripper"
+    ]
+  },
+  "task_description_source": "task_config/.yml -> language_instruction (passed by robotwin_run_utils as instruction; see envs/<task>.py task description docstrings)",
+  "step_signature": "5-tuple",
+  "smoke_test_passed": true,
+  "dropped_task_specific_keys": [
+    "observation.left_camera.intrinsic_cv",
+    "observation.left_camera.extrinsic_cv",
+    "observation.left_camera.cam2world_gl",
+    "observation.right_camera.intrinsic_cv",
+    "observation.right_camera.extrinsic_cv",
+    "observation.right_camera.cam2world_gl",
+    "observation.head_camera.intrinsic_cv",
+    "observation.head_camera.extrinsic_cv",
+    "observation.head_camera.cam2world_gl",
+    "observation.front_camera.intrinsic_cv",
+    "observation.front_camera.extrinsic_cv",
+    "observation.front_camera.cam2world_gl",
+    "joint_action.left_arm",
+    "joint_action.left_gripper",
+    "joint_action.right_arm",
+    "joint_action.right_gripper",
+    "endpose.left_endpose",
+    "endpose.left_gripper",
+    "endpose.right_endpose",
+    "endpose.right_gripper"
+  ]
+}
+```
+
+<!-- END OBS_ACTION_SPEC -->

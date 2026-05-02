@@ -1,23 +1,29 @@
+# Headless mode: no GUI, for training / serving / testing.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.headless.yaml up --build
+#   docker exec -it robotwin-headless bash
+
 services:
   robotwin:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-      args:
-        CUDA_VERSION: ${CUDA_VERSION:-12.1}
-    image: ${IMAGE:-yufengjin/robotwin:latest}
+    # Default image tag for local from-scratch builds. Override with `IMAGE=...`
+    # to point at a registry tag (e.g. `IMAGE=<hub-user>/robotwin:latest docker compose up`).
+    # `docker compose build` will tag the build output with this local tag.
+    image: ${IMAGE:-robotwin:local}
     container_name: robotwin-headless
     restart: unless-stopped
     tty: true
     stdin_open: true
 
     environment:
-      - INSTALL_CLAUDE_CODE=${INSTALL_CLAUDE_CODE:-0}
-      - ROBO_AUTO_ASSETS=${ROBO_AUTO_ASSETS:-1}
       - PYTHONUNBUFFERED=1
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
-      - XDG_RUNTIME_DIR=/tmp/runtime-root
+      - ROBO_AUTO_ASSETS=1
+      # <<<EXTENSION_ENV_INSERT_ABOVE>>> — sub-skills insert env vars above this line
 
     network_mode: host
     ipc: host
@@ -26,6 +32,9 @@ services:
     volumes:
       - ..:/workspace/RoboTwin
       - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+      # <<<EXTENSION_VOLUME_INSERT_ABOVE>>> — sub-skills insert mounts above this line
+      # Add dataset mounts:
+      # - /path/to/datasets:/workspace/datasets:ro
 
     working_dir: /workspace/RoboTwin
     command: tail -f /dev/null

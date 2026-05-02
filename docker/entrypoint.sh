@@ -44,6 +44,8 @@ elif [ "$ROBO_AUTO_ASSETS" != "1" ]; then
     echo ">> ROBO_AUTO_ASSETS=${ROBO_AUTO_ASSETS}: automatic assets download disabled."
 fi
 
+# <<<EXTENSION_ENTRYPOINT_INSERT_ABOVE>>> — sub-skills insert pre-exec hooks above this line
+
 echo ">> Ready. Repo: $RT_ROOT"
 touch /tmp/entrypoint_done
 exec "$@"
